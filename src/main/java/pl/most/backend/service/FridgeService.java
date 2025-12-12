@@ -54,8 +54,13 @@ public class FridgeService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Użytkownik nie znaleziony"));
 
-        // User can delete own items, or admin/przeslowy can delete any
-        if (user.getRole() != User.Role.ADMIN && user.getRole() != User.Role.PRZESLOWY) {
+        // POPRAWKA: Używamy !item.getAddedBy().equals(userId) zamiast !=
+        boolean isOwner = item.getAddedBy().equals(userId);
+        boolean isAdmin = user.getRole() == User.Role.ADMIN;
+        boolean isPrzeslowy = user.getRole() == User.Role.PRZESLOWY;
+
+        // Jeśli NIE jest właścicielem I NIE jest adminem I NIE jest przęsłowym -> BŁĄD
+        if (!isOwner && !isAdmin && !isPrzeslowy) {
             throw new SecurityException("Brak uprawnień do usunięcia produktu");
         }
 

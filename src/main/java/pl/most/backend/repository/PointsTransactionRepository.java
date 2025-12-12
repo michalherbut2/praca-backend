@@ -1,5 +1,5 @@
-// ============================================
-// 4. PointsTransactionRepository.java
+// PointsTransactionRepository.java
+
 package pl.most.backend.repository;
 
 import pl.most.backend.model.entity.PointsTransaction;

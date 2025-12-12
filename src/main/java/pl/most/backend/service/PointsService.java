@@ -1,5 +1,5 @@
-// ============================================
-// 2. PointsService.java
+// PointsService.java
+
 package pl.most.backend.service;
 
 import lombok.RequiredArgsConstructor;

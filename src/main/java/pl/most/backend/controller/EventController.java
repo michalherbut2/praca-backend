@@ -175,4 +175,31 @@ public class EventController {
         eventRepository.delete(event);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{id}/rsvps")
+    public ResponseEntity<List<Map<String, Object>>> getEventRsvpsDetails(@PathVariable String id) {
+        // 1. Pobierz wszystkie zapisy dla wydarzenia
+        List<EventRsvp> rsvps = rsvpRepository.findByEventId(id);
+
+        // 2. Zamień każdy zapis na mapę z danymi użytkownika (imie, nazwisko)
+        List<Map<String, Object>> response = rsvps.stream().map(rsvp -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", rsvp.getId());
+            map.put("eventId", rsvp.getEventId());
+            map.put("userId", rsvp.getUserId());
+            map.put("status", rsvp.getStatus());
+
+            // Szukamy użytkownika po ID, żeby wyciągnąć imię
+            User user = userRepository.findById(rsvp.getUserId()).orElse(null);
+
+            String name = (user != null)
+                    ? user.getFirstName() + " " + user.getLastName()
+                    : "Nieznany";
+
+            map.put("userName", name);
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
 }

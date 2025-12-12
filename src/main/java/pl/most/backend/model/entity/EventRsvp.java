@@ -1,4 +1,4 @@
-// 1. EventRsvp.java (Entity)
+// EventRsvp.java (Entity)
 package pl.most.backend.model.entity;
 
 import jakarta.persistence.*;

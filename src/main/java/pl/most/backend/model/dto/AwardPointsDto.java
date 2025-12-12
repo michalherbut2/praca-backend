@@ -1,5 +1,4 @@
-// ============================================
-// 5. AwardPointsDto.java
+// AwardPointsDto.java
 package pl.most.backend.model.dto;
 
 import jakarta.validation.constraints.NotBlank;

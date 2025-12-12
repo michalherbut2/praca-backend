@@ -1,4 +1,4 @@
-// 1. PointsController.java
+// PointsController.java
 package pl.most.backend.controller;
 
 import lombok.RequiredArgsConstructor;

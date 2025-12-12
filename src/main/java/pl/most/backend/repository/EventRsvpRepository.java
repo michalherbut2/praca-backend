@@ -1,5 +1,4 @@
-// ============================================
-// 2. EventRsvpRepository.java
+// EventRsvpRepository.java
 package pl.most.backend.repository;
 
 import pl.most.backend.model.entity.EventRsvp;

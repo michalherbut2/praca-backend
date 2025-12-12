@@ -1,5 +1,4 @@
-// ============================================
-// 3. PointsTransaction.java (Entity)
+// PointsTransaction.java (Entity)
 package pl.most.backend.model.entity;
 
 import jakarta.persistence.*;
