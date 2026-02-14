@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import pl.most.backend.features.user.model.Section;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -19,6 +20,9 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(nullable = false, unique = true, length = 100)
     private String email;
@@ -35,10 +39,11 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.MOSTOWIAK;
+    private Role role = Role.USER;
 
-    @Column(name = "przeslo_id")
-    private String przesloId;
+    @ManyToOne
+    @JoinColumn(name = "section_id")
+    private Section section;
 
     @Column(nullable = false)
     private Integer points = 0;
@@ -64,6 +69,6 @@ public class User {
     private LocalDateTime lastLoginAt;
 
     public enum Role {
-        GOSC, MOSTOWIAK, PODPRZESLOWY, PRZESLOWY, ADMIN
+        USER, LEADER, ADMIN
     }
 }

@@ -27,7 +27,7 @@ public class Announcement {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Category category = Category.GENERAL;
+    private Category category = Category.INFO;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -57,7 +57,7 @@ public class Announcement {
     private LocalDateTime updatedAt;
 
     public enum Category {
-        IMPORTANT, EVENTS, SPIRITUALITY, GENERAL
+        INFO,  EVENTS, FORMATION
     }
 
     public enum Priority {

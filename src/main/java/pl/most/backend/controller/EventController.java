@@ -11,10 +11,10 @@ import pl.most.backend.model.entity.Event;
 import pl.most.backend.model.entity.User;
 import pl.most.backend.repository.EventRepository;
 import pl.most.backend.repository.EventRsvpRepository;
-import pl.most.backend.repository.UserRepository;
-import org.springframework.web.bind.annotation.*;
+import pl.most.backend.features.user.repository.UserRepository;
 import pl.most.backend.model.entity.EventRsvp;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +57,7 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Event> getEvent(@PathVariable String id) {
+    public ResponseEntity<Event> getEvent(@PathVariable UUID id) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
         return ResponseEntity.ok(event);
@@ -126,10 +126,9 @@ public class EventController {
         return ResponseEntity.ok(result);
     }
 
-    // 1. EventController.java - DODAJ:
     @PutMapping("/{id}")
     public ResponseEntity<Event> updateEvent(
-            @PathVariable String id,
+            @PathVariable UUID id,
             @Valid @RequestBody EventDto dto,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -139,9 +138,11 @@ public class EventController {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow();
 
+        boolean isAuthor = event.getCreatedBy().equals(user.getId());
+        boolean isAdmin = user.getRole() == User.Role.ADMIN;
+
         // Check permissions
-        if (!event.getCreatedBy().equals(user.getId()) &&
-                user.getRole() != User.Role.ADMIN) {
+        if (!isAuthor && !isAdmin) {
             throw new SecurityException("Brak uprawnień");
         }
 
@@ -152,12 +153,16 @@ public class EventController {
         event.setLocation(dto.getLocation());
         event.setMaxParticipants(dto.getMaxParticipants());
 
+        if (dto.getAllowRsvp() != null) {
+            event.setAllowRsvp(dto.getAllowRsvp());
+        }
+
         return ResponseEntity.ok(eventRepository.save(event));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEvent(
-            @PathVariable String id,
+            @PathVariable UUID id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         Event event = eventRepository.findById(id)
@@ -201,5 +206,14 @@ public class EventController {
         }).collect(java.util.stream.Collectors.toList());
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<Event>> getAvailableEvents() {
+        // Pobieramy tylko przyszłe wydarzenia z włączonymi zapisami
+        List<Event> events = eventRepository
+                .findByAllowRsvpTrueAndStartDateAfterOrderByStartDateAsc(LocalDateTime.now());
+
+        return ResponseEntity.ok(events);
     }
 }

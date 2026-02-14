@@ -7,7 +7,7 @@ import pl.most.backend.model.dto.AnnouncementDto;
 import pl.most.backend.model.entity.Announcement;
 import pl.most.backend.model.entity.User;
 import pl.most.backend.repository.AnnouncementRepository;
-import pl.most.backend.repository.UserRepository;
+import pl.most.backend.features.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,14 +37,14 @@ public class AnnouncementService {
                 .orElseThrow(() -> new IllegalArgumentException("Użytkownik nie znaleziony"));
 
         // Check permissions
-        if (author.getRole() != User.Role.ADMIN && author.getRole() != User.Role.PRZESLOWY) {
+        if (author.getRole() != User.Role.ADMIN && author.getRole() != User.Role.LEADER) {
             throw new SecurityException("Brak uprawnień do tworzenia ogłoszeń");
         }
 
         Announcement announcement = new Announcement();
         announcement.setTitle(dto.getTitle());
         announcement.setContent(dto.getContent());
-        announcement.setCategory(dto.getCategory() != null ? dto.getCategory() : Announcement.Category.GENERAL);
+        announcement.setCategory(dto.getCategory() != null ? dto.getCategory() : Announcement.Category.INFO);
         announcement.setPriority(dto.getPriority() != null ? dto.getPriority() : Announcement.Priority.NORMAL);
         announcement.setAuthorId(authorId);
         announcement.setAuthorName(author.getFirstName() + " " + author.getLastName());

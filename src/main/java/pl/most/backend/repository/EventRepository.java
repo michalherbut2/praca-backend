@@ -9,8 +9,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface EventRepository extends JpaRepository<Event, String> {
+public interface EventRepository extends JpaRepository<Event, UUID> {
     List<Event> findByStartDateAfterOrderByStartDateAsc(LocalDateTime now);
-    List<Event> findByPrzesloIdOrderByStartDateAsc(String przesloId);
+    List<Event> findBySectionIdOrderByStartDateAsc(String sectionId);
     List<Event> findByCreatedByOrderByCreatedAtDesc(UUID userId);
+    List<Event> findByAllowRsvpTrueAndStartDateAfterOrderByStartDateAsc(LocalDateTime date);
 }

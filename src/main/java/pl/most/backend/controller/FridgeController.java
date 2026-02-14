@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import pl.most.backend.model.dto.FridgeItemDto;
 import pl.most.backend.model.entity.FridgeItem;
-import pl.most.backend.repository.UserRepository;
+import pl.most.backend.features.user.repository.UserRepository;
 import pl.most.backend.service.FridgeService;
 
 import java.util.List;
@@ -47,13 +47,10 @@ public class FridgeController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(
-            @PathVariable String id,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @PathVariable String id) {
 
-        UUID userId = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow().getId();
 
-        fridgeService.deleteItem(id, userId);
+        fridgeService.deleteItem(id);
         return ResponseEntity.noContent().build();
     }
 }

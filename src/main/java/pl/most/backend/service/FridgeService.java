@@ -7,7 +7,7 @@ import pl.most.backend.model.dto.FridgeItemDto;
 import pl.most.backend.model.entity.FridgeItem;
 import pl.most.backend.model.entity.User;
 import pl.most.backend.repository.FridgeItemRepository;
-import pl.most.backend.repository.UserRepository;
+import pl.most.backend.features.user.repository.UserRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -49,20 +49,8 @@ public class FridgeService {
     }
 
     @Transactional
-    public void deleteItem(String id, UUID userId) {
+    public void deleteItem(String id) {
         FridgeItem item = getItemById(id);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Użytkownik nie znaleziony"));
-
-        // POPRAWKA: Używamy !item.getAddedBy().equals(userId) zamiast !=
-        boolean isOwner = item.getAddedBy().equals(userId);
-        boolean isAdmin = user.getRole() == User.Role.ADMIN;
-        boolean isPrzeslowy = user.getRole() == User.Role.PRZESLOWY;
-
-        // Jeśli NIE jest właścicielem I NIE jest adminem I NIE jest przęsłowym -> BŁĄD
-        if (!isOwner && !isAdmin && !isPrzeslowy) {
-            throw new SecurityException("Brak uprawnień do usunięcia produktu");
-        }
 
         fridgeItemRepository.delete(item);
     }

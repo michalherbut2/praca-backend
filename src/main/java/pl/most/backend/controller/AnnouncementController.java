@@ -11,7 +11,7 @@ import pl.most.backend.model.dto.AnnouncementDto;
 import pl.most.backend.model.entity.Announcement;
 import pl.most.backend.model.entity.User;
 import pl.most.backend.repository.AnnouncementRepository;
-import pl.most.backend.repository.UserRepository;
+import pl.most.backend.features.user.repository.UserRepository;
 import pl.most.backend.service.AnnouncementService;
 
 import java.util.List;

@@ -9,10 +9,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class LoginResponse {
     private String token;
-    private String userId;
-    private String email;
-    private String firstName;
-    private String lastName;
-    private String role;
-    private Integer points;
+    private UserDto user;
 }

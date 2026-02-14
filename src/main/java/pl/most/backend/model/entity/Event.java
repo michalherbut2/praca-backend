@@ -37,8 +37,8 @@ public class Event {
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
 
-    @Column(name = "przeslo_id")
-    private String przesloId;
+    @Column(name = "section_id")
+    private String sectionId;
 
     @Column(name = "max_participants")
     private Integer maxParticipants;

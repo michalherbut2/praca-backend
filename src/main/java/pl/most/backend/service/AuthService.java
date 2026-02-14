@@ -7,8 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.most.backend.model.dto.LoginRequest;
 import pl.most.backend.model.dto.LoginResponse;
 import pl.most.backend.model.dto.RegisterRequest;
+import pl.most.backend.model.dto.UserDto;
 import pl.most.backend.model.entity.User;
-import pl.most.backend.repository.UserRepository;
+import pl.most.backend.features.user.repository.UserRepository;
 import pl.most.backend.security.JwtTokenProvider;
 
 import java.time.LocalDateTime;
@@ -32,7 +33,6 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setRole(User.Role.MOSTOWIAK);
 
         return userRepository.save(user);
     }
@@ -40,6 +40,10 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Nieprawidłowy email lub hasło"));
+
+        if (!user.getIsActive()) {
+            throw new SecurityException("Twoje konto zostało zablokowane. Skontaktuj się z administratorem.");
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Nieprawidłowy email lub hasło");
@@ -50,14 +54,11 @@ public class AuthService {
 
         String token = jwtTokenProvider.generateToken(user);
 
+        UserDto userDto = UserDto.fromEntity(user);
+
         return LoginResponse.builder()
                 .token(token)
-                .userId(String.valueOf(user.getId()))
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .role(user.getRole().name())
-                .points(user.getPoints())
+                .user(userDto)
                 .build();
     }
 }

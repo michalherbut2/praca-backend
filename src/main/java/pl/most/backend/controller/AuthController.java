@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import pl.most.backend.model.dto.LoginRequest;
 import pl.most.backend.model.dto.LoginResponse;
 import pl.most.backend.model.dto.RegisterRequest;
+import pl.most.backend.model.dto.UserDto;
 import pl.most.backend.model.entity.User;
 import pl.most.backend.service.AuthService;
 
@@ -19,9 +20,10 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
         User user = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        LoginResponse loginResponse = authService.login(new LoginRequest(request.getEmail(), request.getPassword()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(loginResponse);
     }
 
     @PostMapping("/login")
