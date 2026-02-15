@@ -1,5 +1,7 @@
 package pl.most.backend.features.user.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,13 +21,24 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("UPDATE User u SET u.points = u.points + :amount WHERE u.id = :userId")
     void updateUserPoints(@Param("userId") UUID userId, @Param("amount") Integer amount);
 
-//    findTop20ByOrderByPointsDesc();
+    // findTop20ByOrderByPointsDesc();
 
     Optional<User> findByEmail(String email);
+
     Boolean existsByEmail(String email);
+
     List<User> findByRole(User.Role role);
+
     List<User> findBySectionId(UUID sectionId);
+
     List<User> findTop20ByRoleInOrderByPointsDesc(List<User.Role> roles);
 
     List<User> findTop20ByOrderByPointsDesc();
+
+    // Admin: paginated search by name or email
+    @Query("SELECT u FROM User u WHERE " +
+            "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<User> searchUsers(@Param("search") String search, Pageable pageable);
 }

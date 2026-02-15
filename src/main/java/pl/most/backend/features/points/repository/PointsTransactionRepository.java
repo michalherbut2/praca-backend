@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface PointsTransactionRepository extends JpaRepository<PointsTransaction, String> {
     List<PointsTransaction> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    List<PointsTransaction> findTop20ByUserIdOrderByCreatedAtDesc(UUID userId);
 }
