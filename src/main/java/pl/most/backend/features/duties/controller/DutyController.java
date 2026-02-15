@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import pl.most.backend.features.duties.dto.CreateSlotRequest;
 import pl.most.backend.features.duties.dto.DutySlotResponse;
 import pl.most.backend.features.duties.dto.SignUpRequest;
 import pl.most.backend.features.duties.model.DutyCategory;
@@ -63,6 +64,22 @@ public class DutyController {
     }
 
     // ─── ADMIN ENDPOINTS ─────────────────────────────────────────────────────
+
+    // 7. Ręcznie utwórz slot
+    @PostMapping("/slots")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DutySlotResponse> createSlot(
+            @RequestBody CreateSlotRequest request) {
+        return ResponseEntity.ok(dutyService.createSlot(request));
+    }
+
+    // 8. Usuń slot (kaskadowo z wolontariuszami)
+    @DeleteMapping("/slots/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteSlot(@PathVariable UUID id) {
+        dutyService.deleteSlot(id);
+        return ResponseEntity.noContent().build();
+    }
 
     // 4. Generuj tydzień liturgii
     @PostMapping("/admin/generate/liturgy")

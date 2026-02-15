@@ -141,6 +141,31 @@ public class DutyService {
         volunteerRepository.save(volunteer);
     }
 
+    // ─── ADMIN: CREATE / DELETE ──────────────────────────────────────────────
+
+    @Transactional
+    public DutySlotResponse createSlot(pl.most.backend.features.duties.dto.CreateSlotRequest request) {
+        DutySlot slot = DutySlot.builder()
+                .title(request.getTitle())
+                .date(request.getDate())
+                .time(request.getTime())
+                .category(request.getCategory())
+                .capacity(request.getCapacity())
+                .pointsValue(request.getPointsValue())
+                .isAutoApproved(request.isAutoApproved())
+                .build();
+
+        DutySlot saved = slotRepository.save(slot);
+        return mapToResponse(saved, null, true);
+    }
+
+    @Transactional
+    public void deleteSlot(UUID slotId) {
+        DutySlot slot = slotRepository.findById(slotId)
+                .orElseThrow(() -> new RuntimeException("Slot nie istnieje"));
+        slotRepository.delete(slot); // CascadeType.ALL usunie wolontariuszy
+    }
+
     // ─── GENERATORS ──────────────────────────────────────────────────────────
 
     @Transactional
@@ -165,8 +190,8 @@ public class DutyService {
             if (dow == DayOfWeek.SUNDAY) {
                 // Niedziela: Czytanie 1, Czytanie 2, Psalm
                 generated.add(createLiturgySlot(day, "Czytanie 1"));
-//                generated.add(createLiturgySlot(day, "Czytanie 2"));
-//                generated.add(createLiturgySlot(day, "Psalm"));
+                // generated.add(createLiturgySlot(day, "Czytanie 2"));
+                // generated.add(createLiturgySlot(day, "Psalm"));
             } else if (dow == DayOfWeek.TUESDAY) {
                 // Wtorek: Czytanie 1, Psalm
                 generated.add(createLiturgySlot(day, "Czytanie 1"));
