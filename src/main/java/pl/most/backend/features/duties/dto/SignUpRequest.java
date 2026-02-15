@@ -1,4 +1,4 @@
-package pl.most.backend.features.scheduler.dto;
+package pl.most.backend.features.duties.dto;
 
 import lombok.Data;
 

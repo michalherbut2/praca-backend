@@ -1,4 +1,4 @@
-package pl.most.backend.features.scheduler.model;
+package pl.most.backend.features.duties.model;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "service_volunteers", uniqueConstraints = {
+@Table(name = "duty_volunteers", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "user_id", "slot_id" })
 })
 @Getter
@@ -17,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ServiceVolunteer {
+public class DutyVolunteer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -29,11 +29,11 @@ public class ServiceVolunteer {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "slot_id", nullable = false)
-    private ServiceSlot slot;
+    private DutySlot slot;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ServiceVolunteerStatus status;
+    private DutyVolunteerStatus status;
 
     @Column(name = "is_anonymous", nullable = false)
     private boolean isAnonymous;

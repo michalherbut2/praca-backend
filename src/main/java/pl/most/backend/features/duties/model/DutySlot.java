@@ -1,4 +1,4 @@
-package pl.most.backend.features.scheduler.model;
+package pl.most.backend.features.duties.model;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,13 +11,13 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "service_slots")
+@Table(name = "duty_slots")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ServiceSlot {
+public class DutySlot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -31,7 +31,7 @@ public class ServiceSlot {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ServiceCategory category;
+    private DutyCategory category;
 
     @Column(nullable = false)
     private String title;
@@ -48,7 +48,7 @@ public class ServiceSlot {
 
     @OneToMany(mappedBy = "slot", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<ServiceVolunteer> volunteers = new ArrayList<>();
+    private List<DutyVolunteer> volunteers = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

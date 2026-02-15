@@ -1,4 +1,4 @@
-package pl.most.backend.features.scheduler.service;
+package pl.most.backend.features.duties.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -8,11 +8,11 @@ import pl.most.backend.features.notifications.service.NotificationService;
 import pl.most.backend.features.points.model.PointsTransaction;
 import pl.most.backend.features.points.model.TransactionType;
 import pl.most.backend.features.points.repository.PointsTransactionRepository;
-import pl.most.backend.features.scheduler.dto.ServiceSlotResponse;
-import pl.most.backend.features.scheduler.dto.VolunteerInfo;
-import pl.most.backend.features.scheduler.model.*;
-import pl.most.backend.features.scheduler.repository.ServiceSlotRepository;
-import pl.most.backend.features.scheduler.repository.ServiceVolunteerRepository;
+import pl.most.backend.features.duties.dto.DutySlotResponse;
+import pl.most.backend.features.duties.dto.VolunteerInfo;
+import pl.most.backend.features.duties.model.*;
+import pl.most.backend.features.duties.repository.DutySlotRepository;
+import pl.most.backend.features.duties.repository.DutyVolunteerRepository;
 import pl.most.backend.features.user.repository.UserRepository;
 import pl.most.backend.model.entity.User;
 
@@ -27,23 +27,23 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ServiceSchedulerService {
+public class DutyService {
 
-    private final ServiceSlotRepository slotRepository;
-    private final ServiceVolunteerRepository volunteerRepository;
+    private final DutySlotRepository slotRepository;
+    private final DutyVolunteerRepository volunteerRepository;
     private final UserRepository userRepository;
     private final PointsTransactionRepository pointsTransactionRepository;
     private final NotificationService notificationService;
 
     // ─── QUERIES ─────────────────────────────────────────────────────────────
 
-    public List<ServiceSlotResponse> getSlots(
-            ServiceCategory category,
+    public List<DutySlotResponse> getSlots(
+            DutyCategory category,
             LocalDate dateFrom,
             LocalDate dateTo,
             UUID currentUserId,
             boolean isAdmin) {
-        List<ServiceSlot> slots = slotRepository
+        List<DutySlot> slots = slotRepository
                 .findAllByCategoryAndDateBetweenOrderByDateAscTimeAsc(category, dateFrom, dateTo);
 
         return slots.stream()
@@ -54,8 +54,8 @@ public class ServiceSchedulerService {
     // ─── SIGN UP ─────────────────────────────────────────────────────────────
 
     @Transactional
-    public ServiceSlotResponse signUp(UUID slotId, UUID userId, boolean isAnonymous) {
-        ServiceSlot slot = slotRepository.findById(slotId)
+    public DutySlotResponse signUp(UUID slotId, UUID userId, boolean isAnonymous) {
+        DutySlot slot = slotRepository.findById(slotId)
                 .orElseThrow(() -> new RuntimeException("Slot nie istnieje"));
 
         User user = userRepository.findById(userId)
@@ -67,16 +67,16 @@ public class ServiceSchedulerService {
         }
 
         // Policz zatwierdzone miejsca
-        long approvedCount = volunteerRepository.countBySlotIdAndStatus(slotId, ServiceVolunteerStatus.APPROVED);
+        long approvedCount = volunteerRepository.countBySlotIdAndStatus(slotId, DutyVolunteerStatus.APPROVED);
 
-        ServiceVolunteerStatus status;
+        DutyVolunteerStatus status;
         if (slot.isAutoApproved() && approvedCount < slot.getCapacity()) {
-            status = ServiceVolunteerStatus.APPROVED;
+            status = DutyVolunteerStatus.APPROVED;
         } else {
-            status = ServiceVolunteerStatus.PENDING;
+            status = DutyVolunteerStatus.PENDING;
         }
 
-        ServiceVolunteer volunteer = ServiceVolunteer.builder()
+        DutyVolunteer volunteer = DutyVolunteer.builder()
                 .user(user)
                 .slot(slot)
                 .status(status)
@@ -95,7 +95,7 @@ public class ServiceSchedulerService {
 
     @Transactional
     public void cancelSignUp(UUID slotId, UUID userId) {
-        ServiceVolunteer volunteer = volunteerRepository.findBySlotIdAndUserId(slotId, userId)
+        DutyVolunteer volunteer = volunteerRepository.findBySlotIdAndUserId(slotId, userId)
                 .orElseThrow(() -> new RuntimeException("Nie jesteś zapisany na tę służbę"));
 
         volunteerRepository.delete(volunteer);
@@ -105,12 +105,12 @@ public class ServiceSchedulerService {
 
     @Transactional
     public void confirmPresence(UUID volunteerId, UUID adminUserId) {
-        ServiceVolunteer volunteer = volunteerRepository.findById(volunteerId)
+        DutyVolunteer volunteer = volunteerRepository.findById(volunteerId)
                 .orElseThrow(() -> new RuntimeException("Wolontariusz nie istnieje"));
 
         volunteer.setWasPresent(true);
 
-        ServiceSlot slot = volunteer.getSlot();
+        DutySlot slot = volunteer.getSlot();
 
         // Dodaj punkty jeśli jeszcze nie przyznano i slot ma wartość punktową
         if (!volunteer.isPointsAwarded() && slot.getPointsValue() > 0) {
@@ -144,11 +144,11 @@ public class ServiceSchedulerService {
     // ─── GENERATORS ──────────────────────────────────────────────────────────
 
     @Transactional
-    public List<ServiceSlotResponse> generateLiturgyWeek(LocalDate date) {
+    public List<DutySlotResponse> generateLiturgyWeek(LocalDate date) {
         // Zawsze normalizuj do poniedziałku tygodnia zawierającego podaną datę
         LocalDate startMonday = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
-        List<ServiceSlot> generated = new ArrayList<>();
+        List<DutySlot> generated = new ArrayList<>();
 
         for (int i = 0; i < 7; i++) {
             LocalDate day = startMonday.plusDays(i);
@@ -159,7 +159,7 @@ public class ServiceSchedulerService {
                 continue;
 
             // Pomiń jeśli na ten dzień już wygenerowano sloty
-            if (slotRepository.existsByCategoryAndDate(ServiceCategory.LITURGY, day))
+            if (slotRepository.existsByCategoryAndDate(DutyCategory.LITURGY, day))
                 continue;
 
             if (dow == DayOfWeek.SUNDAY) {
@@ -177,43 +177,43 @@ public class ServiceSchedulerService {
             }
         }
 
-        List<ServiceSlot> saved = slotRepository.saveAll(generated);
+        List<DutySlot> saved = slotRepository.saveAll(generated);
         return saved.stream()
                 .map(s -> mapToResponse(s, null, true))
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public ServiceSlotResponse generateSundayKitchen(LocalDate sunday) {
+    public DutySlotResponse generateSundayKitchen(LocalDate sunday) {
         if (sunday.getDayOfWeek() != DayOfWeek.SUNDAY) {
             throw new IllegalArgumentException("Data musi być niedzielą!");
         }
 
-        if (slotRepository.existsByCategoryAndDate(ServiceCategory.KITCHEN, sunday)) {
+        if (slotRepository.existsByCategoryAndDate(DutyCategory.KITCHEN, sunday)) {
             throw new IllegalStateException("Slot kuchenny na ten dzień już istnieje");
         }
 
-        ServiceSlot slot = ServiceSlot.builder()
+        DutySlot slot = DutySlot.builder()
                 .date(sunday)
                 .time(LocalTime.of(14, 0))
-                .category(ServiceCategory.KITCHEN)
+                .category(DutyCategory.KITCHEN)
                 .title("Przygotowanie kolacji")
                 .capacity(5)
                 .isAutoApproved(true)
                 .pointsValue(1)
                 .build();
 
-        ServiceSlot saved = slotRepository.save(slot);
+        DutySlot saved = slotRepository.save(slot);
         return mapToResponse(saved, null, true);
     }
 
     // ─── MAPPING ─────────────────────────────────────────────────────────────
 
-    private ServiceSlot createLiturgySlot(LocalDate date, String title) {
-        return ServiceSlot.builder()
+    private DutySlot createLiturgySlot(LocalDate date, String title) {
+        return DutySlot.builder()
                 .date(date)
                 .time(LocalTime.of(18, 0)) // Domyślna godzina Mszy
-                .category(ServiceCategory.LITURGY)
+                .category(DutyCategory.LITURGY)
                 .title(title)
                 .capacity(1)
                 .isAutoApproved(false)
@@ -221,8 +221,8 @@ public class ServiceSchedulerService {
                 .build();
     }
 
-    private ServiceSlotResponse mapToResponse(ServiceSlot slot, UUID requesterId, boolean isRequesterAdmin) {
-        long approvedCount = volunteerRepository.countBySlotIdAndStatus(slot.getId(), ServiceVolunteerStatus.APPROVED);
+    private DutySlotResponse mapToResponse(DutySlot slot, UUID requesterId, boolean isRequesterAdmin) {
+        long approvedCount = volunteerRepository.countBySlotIdAndStatus(slot.getId(), DutyVolunteerStatus.APPROVED);
 
         boolean isSignedUp = requesterId != null
                 && volunteerRepository.existsBySlotIdAndUserId(slot.getId(), requesterId);
@@ -231,7 +231,7 @@ public class ServiceSchedulerService {
                 .map(v -> mapVolunteerInfo(v, isRequesterAdmin, requesterId))
                 .collect(Collectors.toList());
 
-        return ServiceSlotResponse.builder()
+        return DutySlotResponse.builder()
                 .id(slot.getId())
                 .date(slot.getDate())
                 .time(slot.getTime())
@@ -246,11 +246,7 @@ public class ServiceSchedulerService {
                 .build();
     }
 
-    private VolunteerInfo mapVolunteerInfo(ServiceVolunteer v, boolean isRequesterAdmin, UUID requesterId) {
-        // Pokaż prawdziwe dane jeśli:
-        // 1. Wolontariusz NIE jest anonimowy, LUB
-        // 2. Requester jest adminem, LUB
-        // 3. Requester to ten sam wolontariusz (widzi siebie)
+    private VolunteerInfo mapVolunteerInfo(DutyVolunteer v, boolean isRequesterAdmin, UUID requesterId) {
         boolean showRealName = !v.isAnonymous()
                 || isRequesterAdmin
                 || (v.getUser().getId().equals(requesterId));

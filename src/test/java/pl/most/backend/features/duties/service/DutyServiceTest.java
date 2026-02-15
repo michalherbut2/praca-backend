@@ -1,4 +1,4 @@
-package pl.most.backend.features.scheduler.service;
+package pl.most.backend.features.duties.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,10 +11,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pl.most.backend.features.notifications.service.NotificationService;
 import pl.most.backend.features.points.repository.PointsTransactionRepository;
-import pl.most.backend.features.scheduler.dto.ServiceSlotResponse;
-import pl.most.backend.features.scheduler.model.*;
-import pl.most.backend.features.scheduler.repository.ServiceSlotRepository;
-import pl.most.backend.features.scheduler.repository.ServiceVolunteerRepository;
+import pl.most.backend.features.duties.dto.DutySlotResponse;
+import pl.most.backend.features.duties.model.*;
+import pl.most.backend.features.duties.repository.DutySlotRepository;
+import pl.most.backend.features.duties.repository.DutyVolunteerRepository;
 import pl.most.backend.features.user.repository.UserRepository;
 import pl.most.backend.model.entity.User;
 
@@ -29,13 +29,13 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class ServiceSchedulerServiceTest {
+class DutyServiceTest {
 
     @Mock
-    private ServiceSlotRepository slotRepository;
+    private DutySlotRepository slotRepository;
 
     @Mock
-    private ServiceVolunteerRepository volunteerRepository;
+    private DutyVolunteerRepository volunteerRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -47,7 +47,7 @@ class ServiceSchedulerServiceTest {
     private NotificationService notificationService;
 
     @InjectMocks
-    private ServiceSchedulerService service;
+    private DutyService service;
 
     private User testUser;
     private UUID slotId;
@@ -68,12 +68,12 @@ class ServiceSchedulerServiceTest {
         testUser.setPoints(0);
     }
 
-    private ServiceSlot createSlot(boolean autoApproved, int capacity) {
-        return ServiceSlot.builder()
+    private DutySlot createSlot(boolean autoApproved, int capacity) {
+        return DutySlot.builder()
                 .id(slotId)
                 .date(LocalDate.of(2026, 2, 15))
                 .time(LocalTime.of(18, 0))
-                .category(ServiceCategory.LITURGY)
+                .category(DutyCategory.LITURGY)
                 .title("Czytanie 1")
                 .capacity(capacity)
                 .isAutoApproved(autoApproved)
@@ -90,26 +90,26 @@ class ServiceSchedulerServiceTest {
         @DisplayName("autoApprove=true i jest miejsce → status APPROVED")
         void signUp_autoApproveWithCapacity_shouldReturnApproved() {
             // given
-            ServiceSlot slot = createSlot(true, 2);
+            DutySlot slot = createSlot(true, 2);
 
             when(slotRepository.findById(slotId)).thenReturn(Optional.of(slot));
             when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
             when(volunteerRepository.existsBySlotIdAndUserId(slotId, userId)).thenReturn(false);
-            when(volunteerRepository.countBySlotIdAndStatus(slotId, ServiceVolunteerStatus.APPROVED)).thenReturn(0L);
-            when(volunteerRepository.save(any(ServiceVolunteer.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(volunteerRepository.countBySlotIdAndStatus(slotId, DutyVolunteerStatus.APPROVED)).thenReturn(0L);
+            when(volunteerRepository.save(any(DutyVolunteer.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // mapToResponse potrzebuje ponownego pobrania slotu
             when(slotRepository.findById(slotId)).thenReturn(Optional.of(slot));
 
             // when
-            ServiceSlotResponse response = service.signUp(slotId, userId, false);
+            DutySlotResponse response = service.signUp(slotId, userId, false);
 
             // then
-            ArgumentCaptor<ServiceVolunteer> captor = ArgumentCaptor.forClass(ServiceVolunteer.class);
+            ArgumentCaptor<DutyVolunteer> captor = ArgumentCaptor.forClass(DutyVolunteer.class);
             verify(volunteerRepository).save(captor.capture());
 
-            ServiceVolunteer saved = captor.getValue();
-            assertThat(saved.getStatus()).isEqualTo(ServiceVolunteerStatus.APPROVED);
+            DutyVolunteer saved = captor.getValue();
+            assertThat(saved.getStatus()).isEqualTo(DutyVolunteerStatus.APPROVED);
             assertThat(saved.getUser()).isEqualTo(testUser);
             assertThat(saved.getSlot()).isEqualTo(slot);
             assertThat(response).isNotNull();
@@ -119,53 +119,53 @@ class ServiceSchedulerServiceTest {
         @DisplayName("autoApprove=false → status PENDING")
         void signUp_noAutoApprove_shouldReturnPending() {
             // given
-            ServiceSlot slot = createSlot(false, 2);
+            DutySlot slot = createSlot(false, 2);
 
             when(slotRepository.findById(slotId)).thenReturn(Optional.of(slot));
             when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
             when(volunteerRepository.existsBySlotIdAndUserId(slotId, userId)).thenReturn(false);
-            when(volunteerRepository.countBySlotIdAndStatus(slotId, ServiceVolunteerStatus.APPROVED)).thenReturn(0L);
-            when(volunteerRepository.save(any(ServiceVolunteer.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(volunteerRepository.countBySlotIdAndStatus(slotId, DutyVolunteerStatus.APPROVED)).thenReturn(0L);
+            when(volunteerRepository.save(any(DutyVolunteer.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // when
             service.signUp(slotId, userId, false);
 
             // then
-            ArgumentCaptor<ServiceVolunteer> captor = ArgumentCaptor.forClass(ServiceVolunteer.class);
+            ArgumentCaptor<DutyVolunteer> captor = ArgumentCaptor.forClass(DutyVolunteer.class);
             verify(volunteerRepository).save(captor.capture());
 
-            assertThat(captor.getValue().getStatus()).isEqualTo(ServiceVolunteerStatus.PENDING);
+            assertThat(captor.getValue().getStatus()).isEqualTo(DutyVolunteerStatus.PENDING);
         }
 
         @Test
         @DisplayName("autoApprove=true ale slot pełny → status PENDING (brak miejsca)")
         void signUp_autoApproveButFull_shouldReturnPending() {
             // given
-            ServiceSlot slot = createSlot(true, 1);
+            DutySlot slot = createSlot(true, 1);
 
             when(slotRepository.findById(slotId)).thenReturn(Optional.of(slot));
             when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
             when(volunteerRepository.existsBySlotIdAndUserId(slotId, userId)).thenReturn(false);
             // Capacity = 1, a jeden już zatwierdzony
-            when(volunteerRepository.countBySlotIdAndStatus(slotId, ServiceVolunteerStatus.APPROVED)).thenReturn(1L);
-            when(volunteerRepository.save(any(ServiceVolunteer.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(volunteerRepository.countBySlotIdAndStatus(slotId, DutyVolunteerStatus.APPROVED)).thenReturn(1L);
+            when(volunteerRepository.save(any(DutyVolunteer.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // when
             service.signUp(slotId, userId, false);
 
             // then
-            ArgumentCaptor<ServiceVolunteer> captor = ArgumentCaptor.forClass(ServiceVolunteer.class);
+            ArgumentCaptor<DutyVolunteer> captor = ArgumentCaptor.forClass(DutyVolunteer.class);
             verify(volunteerRepository).save(captor.capture());
 
             // Mimo autoApprove, capacity wyczerpana → PENDING
-            assertThat(captor.getValue().getStatus()).isEqualTo(ServiceVolunteerStatus.PENDING);
+            assertThat(captor.getValue().getStatus()).isEqualTo(DutyVolunteerStatus.PENDING);
         }
 
         @Test
         @DisplayName("Użytkownik już zapisany → IllegalStateException")
         void signUp_alreadySignedUp_shouldThrow() {
             // given
-            ServiceSlot slot = createSlot(true, 2);
+            DutySlot slot = createSlot(true, 2);
 
             when(slotRepository.findById(slotId)).thenReturn(Optional.of(slot));
             when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
@@ -204,24 +204,24 @@ class ServiceSchedulerServiceTest {
             otherUser.setFirstName("Anna");
             otherUser.setLastName("Nowak");
 
-            ServiceSlot slot = createSlot(true, 2);
-            ServiceVolunteer anonymousVol = ServiceVolunteer.builder()
+            DutySlot slot = createSlot(true, 2);
+            DutyVolunteer anonymousVol = DutyVolunteer.builder()
                     .id(UUID.randomUUID())
                     .user(otherUser)
                     .slot(slot)
-                    .status(ServiceVolunteerStatus.APPROVED)
+                    .status(DutyVolunteerStatus.APPROVED)
                     .isAnonymous(true)
                     .build();
             slot.getVolunteers().add(anonymousVol);
 
             when(slotRepository.findAllByCategoryAndDateBetweenOrderByDateAscTimeAsc(
                     any(), any(), any())).thenReturn(java.util.List.of(slot));
-            when(volunteerRepository.countBySlotIdAndStatus(slotId, ServiceVolunteerStatus.APPROVED)).thenReturn(1L);
+            when(volunteerRepository.countBySlotIdAndStatus(slotId, DutyVolunteerStatus.APPROVED)).thenReturn(1L);
             when(volunteerRepository.existsBySlotIdAndUserId(slotId, userId)).thenReturn(false);
 
             // when — requester jest zwykłym userem (nie adminem, nie wolontariuszem)
             var response = service.getSlots(
-                    ServiceCategory.LITURGY,
+                    DutyCategory.LITURGY,
                     LocalDate.of(2026, 2, 15),
                     LocalDate.of(2026, 2, 15),
                     userId,
@@ -245,24 +245,24 @@ class ServiceSchedulerServiceTest {
             volunteer.setFirstName("Anna");
             volunteer.setLastName("Nowak");
 
-            ServiceSlot slot = createSlot(true, 2);
-            ServiceVolunteer anonymousVol = ServiceVolunteer.builder()
+            DutySlot slot = createSlot(true, 2);
+            DutyVolunteer anonymousVol = DutyVolunteer.builder()
                     .id(UUID.randomUUID())
                     .user(volunteer)
                     .slot(slot)
-                    .status(ServiceVolunteerStatus.APPROVED)
+                    .status(DutyVolunteerStatus.APPROVED)
                     .isAnonymous(true)
                     .build();
             slot.getVolunteers().add(anonymousVol);
 
             when(slotRepository.findAllByCategoryAndDateBetweenOrderByDateAscTimeAsc(
                     any(), any(), any())).thenReturn(java.util.List.of(slot));
-            when(volunteerRepository.countBySlotIdAndStatus(slotId, ServiceVolunteerStatus.APPROVED)).thenReturn(1L);
+            when(volunteerRepository.countBySlotIdAndStatus(slotId, DutyVolunteerStatus.APPROVED)).thenReturn(1L);
             when(volunteerRepository.existsBySlotIdAndUserId(slotId, adminId)).thenReturn(false);
 
             // when — requester jest adminem
             var response = service.getSlots(
-                    ServiceCategory.LITURGY,
+                    DutyCategory.LITURGY,
                     LocalDate.of(2026, 2, 15),
                     LocalDate.of(2026, 2, 15),
                     adminId,
@@ -278,24 +278,24 @@ class ServiceSchedulerServiceTest {
         @DisplayName("Anonimowy wolontariusz WIDZI swoje własne imię")
         void getSlots_anonymousVolunteer_selfSeesOwnName() {
             // given
-            ServiceSlot slot = createSlot(true, 2);
-            ServiceVolunteer anonymousVol = ServiceVolunteer.builder()
+            DutySlot slot = createSlot(true, 2);
+            DutyVolunteer anonymousVol = DutyVolunteer.builder()
                     .id(UUID.randomUUID())
                     .user(testUser) // sam requester jest wolontariuszem
                     .slot(slot)
-                    .status(ServiceVolunteerStatus.APPROVED)
+                    .status(DutyVolunteerStatus.APPROVED)
                     .isAnonymous(true)
                     .build();
             slot.getVolunteers().add(anonymousVol);
 
             when(slotRepository.findAllByCategoryAndDateBetweenOrderByDateAscTimeAsc(
                     any(), any(), any())).thenReturn(java.util.List.of(slot));
-            when(volunteerRepository.countBySlotIdAndStatus(slotId, ServiceVolunteerStatus.APPROVED)).thenReturn(1L);
+            when(volunteerRepository.countBySlotIdAndStatus(slotId, DutyVolunteerStatus.APPROVED)).thenReturn(1L);
             when(volunteerRepository.existsBySlotIdAndUserId(slotId, userId)).thenReturn(true);
 
             // when — requester to sam wolontariusz, nie admin
             var response = service.getSlots(
-                    ServiceCategory.LITURGY,
+                    DutyCategory.LITURGY,
                     LocalDate.of(2026, 2, 15),
                     LocalDate.of(2026, 2, 15),
                     userId,

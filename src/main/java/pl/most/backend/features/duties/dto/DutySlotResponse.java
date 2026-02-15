@@ -1,4 +1,4 @@
-package pl.most.backend.features.scheduler.dto;
+package pl.most.backend.features.duties.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class ServiceSlotResponse {
+public class DutySlotResponse {
     private UUID id;
     private LocalDate date;
     private LocalTime time;
