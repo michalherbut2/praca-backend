@@ -33,65 +33,65 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = DutyController.class)
 class DutyControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockitoBean
-    private DutyService dutyService;
+        @MockitoBean
+        private DutyService dutyService;
 
-    @MockitoBean
-    private GoogleCalendarService googleCalendarService;
+        @MockitoBean
+        private GoogleCalendarService googleCalendarService;
 
-    @MockitoBean
-    private JwtTokenProvider jwtTokenProvider;
+        @MockitoBean
+        private JwtTokenProvider jwtTokenProvider;
 
-    @MockitoBean
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+        @MockitoBean
+        private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @MockitoBean
-    private AppUserDetailsService appUserDetailsService;
+        @MockitoBean
+        private AppUserDetailsService appUserDetailsService;
 
-    @MockitoBean
-    private UserDetailsServiceImpl userDetailsService;
+        @MockitoBean
+        private UserDetailsServiceImpl userDetailsService;
 
-    private static UsernamePasswordAuthenticationToken createAuth(User.Role role) {
-        User user = new User();
-        user.setId(UUID.randomUUID());
-        user.setEmail("test@example.com");
-        user.setPassword("password");
-        user.setFirstName("Test");
-        user.setLastName("User");
-        user.setRole(role);
-        user.setIsActive(true);
+        private static UsernamePasswordAuthenticationToken createAuth(User.Role role) {
+                User user = new User();
+                user.setId(UUID.randomUUID());
+                user.setEmail("test@example.com");
+                user.setPassword("password");
+                user.setFirstName("Test");
+                user.setLastName("User");
+                user.setRole(role);
+                user.setIsActive(true);
 
-        AppUserDetails principal = new AppUserDetails(user);
-        return new UsernamePasswordAuthenticationToken(
-                principal, null, List.of(new SimpleGrantedAuthority("ROLE_" + role.name())));
-    }
+                AppUserDetails principal = new AppUserDetails(user);
+                return new UsernamePasswordAuthenticationToken(
+                                principal, null, List.of(new SimpleGrantedAuthority("ROLE_" + role.name())));
+        }
 
-    @Test
-    void shouldReturn200_WhenUserRequestsSlots() throws Exception {
-        given(dutyService.getSlots(any(), any(), any(), any(), anyBoolean()))
-                .willReturn(Collections.emptyList());
+        @Test
+        void shouldReturn200_WhenUserRequestsSlots() throws Exception {
+                given(dutyService.getSlots(any(), any(), any(), any(), anyBoolean(), anyBoolean()))
+                                .willReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/api/duties/slots")
-                .param("category", "KITCHEN")
-                .param("dateFrom", "2026-02-10")
-                .param("dateTo", "2026-02-16")
-                .with(authentication(createAuth(User.Role.USER))))
-                .andExpect(status().isOk());
-    }
+                mockMvc.perform(get("/api/duties/slots")
+                                .param("category", "KITCHEN")
+                                .param("dateFrom", "2026-02-10")
+                                .param("dateTo", "2026-02-16")
+                                .with(authentication(createAuth(User.Role.USER))))
+                                .andExpect(status().isOk());
+        }
 
-    @Test
-    void shouldReturn200_WhenAdminGeneratesWeek() throws Exception {
-        given(dutyService.generateLiturgyWeek(any()))
-                .willReturn(Collections.emptyList());
+        @Test
+        void shouldReturn200_WhenAdminGeneratesWeek() throws Exception {
+                given(dutyService.generateLiturgyWeek(any()))
+                                .willReturn(Collections.emptyList());
 
-        mockMvc.perform(post("/api/duties/admin/generate/liturgy")
-                .param("startMonday", "2026-02-16")
-                .contentType(MediaType.APPLICATION_JSON)
-                .with(authentication(createAuth(User.Role.ADMIN)))
-                .with(csrf()))
-                .andExpect(status().isOk());
-    }
+                mockMvc.perform(post("/api/duties/admin/generate/liturgy")
+                                .param("startMonday", "2026-02-16")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(authentication(createAuth(User.Role.ADMIN)))
+                                .with(csrf()))
+                                .andExpect(status().isOk());
+        }
 }

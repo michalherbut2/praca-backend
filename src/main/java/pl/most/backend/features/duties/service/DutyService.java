@@ -42,9 +42,15 @@ public class DutyService {
             LocalDate dateFrom,
             LocalDate dateTo,
             UUID currentUserId,
-            boolean isAdmin) {
+            boolean isAdmin,
+            boolean includePast) {
+
+        // When includePast=false, clamp dateFrom to today so past slots are excluded
+        LocalDate effectiveFrom = includePast ? dateFrom
+                : dateFrom.isBefore(LocalDate.now()) ? LocalDate.now() : dateFrom;
+
         List<DutySlot> slots = slotRepository
-                .findAllByCategoryAndDateBetweenOrderByDateAscTimeAsc(category, dateFrom, dateTo);
+                .findAllByCategoryAndDateBetweenOrderByDateAscTimeAsc(category, effectiveFrom, dateTo);
 
         return slots.stream()
                 .map(slot -> mapToResponse(slot, currentUserId, isAdmin))
@@ -100,6 +106,29 @@ public class DutyService {
 
         volunteerRepository.delete(volunteer);
     }
+    // ─── APPROVE VOLUNTEER (ADMIN) ──────────────────────────────────────────
+
+    @Transactional
+    public void approveVolunteer(UUID volunteerId) {
+        DutyVolunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new RuntimeException("Wolontariusz nie istnieje"));
+
+        if (volunteer.getStatus() == DutyVolunteerStatus.APPROVED) {
+            throw new IllegalStateException("Wolontariusz jest już zatwierdzony");
+        }
+
+        volunteer.setStatus(DutyVolunteerStatus.APPROVED);
+        volunteerRepository.save(volunteer);
+
+        // Powiadomienie wolontariusza
+        DutySlot slot = volunteer.getSlot();
+        notificationService.send(
+                volunteer.getUser(),
+                "Zgłoszenie zatwierdzone ✅",
+                "Twoje zgłoszenie na \"" + slot.getTitle() + "\" (" + slot.getDate() + ") zostało zatwierdzone.",
+                NotificationType.SUCCESS,
+                slot.getId());
+    }
 
     // ─── CONFIRM PRESENCE (ADMIN) ────────────────────────────────────────────
 
@@ -154,6 +183,30 @@ public class DutyService {
                 .pointsValue(request.getPointsValue())
                 .isAutoApproved(request.isAutoApproved())
                 .build();
+
+        DutySlot saved = slotRepository.save(slot);
+        return mapToResponse(saved, null, true);
+    }
+
+    @Transactional
+    public DutySlotResponse updateSlot(UUID slotId, pl.most.backend.features.duties.dto.UpdateSlotRequest request) {
+        DutySlot slot = slotRepository.findById(slotId)
+                .orElseThrow(() -> new RuntimeException("Slot nie istnieje"));
+
+        // Validate: new capacity must not be below current approved count
+        long approvedCount = volunteerRepository.countBySlotIdAndStatus(slotId, DutyVolunteerStatus.APPROVED);
+        if (request.getCapacity() < approvedCount) {
+            throw new IllegalStateException(
+                    "Nie można zmniejszyć limitu poniżej liczby zatwierdzonych osób (" + approvedCount + ")");
+        }
+
+        slot.setTitle(request.getTitle());
+        slot.setDate(request.getDate());
+        slot.setTime(request.getTime());
+        slot.setCategory(request.getCategory());
+        slot.setCapacity(request.getCapacity());
+        slot.setPointsValue(request.getPointsValue());
+        slot.setAutoApproved(request.isAutoApproved());
 
         DutySlot saved = slotRepository.save(slot);
         return mapToResponse(saved, null, true);

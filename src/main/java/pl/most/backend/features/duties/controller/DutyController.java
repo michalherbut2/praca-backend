@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pl.most.backend.features.duties.dto.CreateSlotRequest;
+import pl.most.backend.features.duties.dto.UpdateSlotRequest;
 import pl.most.backend.features.duties.dto.DutySlotResponse;
 import pl.most.backend.features.duties.dto.SignUpRequest;
 import pl.most.backend.features.duties.model.DutyCategory;
@@ -34,10 +35,11 @@ public class DutyController {
             @RequestParam DutyCategory category,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(defaultValue = "false") boolean includePast,
             @AuthenticationPrincipal AppUserDetails userDetails) {
         boolean isAdmin = userDetails.getUser().getRole() == User.Role.ADMIN;
         List<DutySlotResponse> slots = dutyService.getSlots(
-                category, dateFrom, dateTo, userDetails.getUser().getId(), isAdmin);
+                category, dateFrom, dateTo, userDetails.getUser().getId(), isAdmin, includePast);
         return ResponseEntity.ok(slots);
     }
 
@@ -73,6 +75,15 @@ public class DutyController {
         return ResponseEntity.ok(dutyService.createSlot(request));
     }
 
+    // 9. Edytuj slot
+    @PutMapping("/slots/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DutySlotResponse> updateSlot(
+            @PathVariable UUID id,
+            @RequestBody UpdateSlotRequest request) {
+        return ResponseEntity.ok(dutyService.updateSlot(id, request));
+    }
+
     // 8. Usuń slot (kaskadowo z wolontariuszami)
     @DeleteMapping("/slots/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -104,6 +115,14 @@ public class DutyController {
             @PathVariable UUID id,
             @AuthenticationPrincipal AppUserDetails userDetails) {
         dutyService.confirmPresence(id, userDetails.getUser().getId());
+        return ResponseEntity.ok().build();
+    }
+
+    // 10. Zatwierdź wolontariusza (PENDING → APPROVED)
+    @PutMapping("/volunteers/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> approveVolunteer(@PathVariable UUID id) {
+        dutyService.approveVolunteer(id);
         return ResponseEntity.ok().build();
     }
 }
