@@ -165,8 +165,8 @@ public class DutyService {
             if (dow == DayOfWeek.SUNDAY) {
                 // Niedziela: Czytanie 1, Czytanie 2, Psalm
                 generated.add(createLiturgySlot(day, "Czytanie 1"));
-                generated.add(createLiturgySlot(day, "Czytanie 2"));
-                generated.add(createLiturgySlot(day, "Psalm"));
+//                generated.add(createLiturgySlot(day, "Czytanie 2"));
+//                generated.add(createLiturgySlot(day, "Psalm"));
             } else if (dow == DayOfWeek.TUESDAY) {
                 // Wtorek: Czytanie 1, Psalm
                 generated.add(createLiturgySlot(day, "Czytanie 1"));
